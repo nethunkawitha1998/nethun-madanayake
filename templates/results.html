@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Results &amp; Discussion{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Results &amp; Discussion</h1>
+    <p>Based on <strong>{{ results.n_responses }}</strong> uploaded responses.</p>
+</section>
+
+{% if results.missing_report %}
+<section class="notice-box">
+    <h3>Data notes</h3>
+    <ul>
+        {% for note in results.missing_report %}
+            <li>{{ note }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section class="results-section">
+    <h2>Respondent Profile</h2>
+    <div class="chart-grid" id="demographics-charts"></div>
+</section>
+
+<section class="results-section">
+    <h2>Construct Reliability &amp; Descriptive Statistics</h2>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>Construct</th><th>Items</th><th>Mean</th><th>SD</th><th>Cronbach's &alpha;</th></tr>
+            </thead>
+            <tbody>
+                {% for row in results.reliability %}
+                <tr>
+                    <td>{{ row.construct }}</td>
+                    <td>{{ row.items }}</td>
+                    <td>{{ row.mean if row.mean is not none else "—" }}</td>
+                    <td>{{ row.sd if row.sd is not none else "—" }}</td>
+                    <td>{{ row.alpha if row.alpha is not none else "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="chart-wrapper">
+        <canvas id="construct-means-chart" height="120"></canvas>
+    </div>
+</section>
+
+<section class="results-section">
+    <h2>Correlation Matrix</h2>
+    <div class="table-wrapper" id="correlation-table-wrapper"></div>
+</section>
+
+<section class="results-section">
+    <h2>Hypothesis Testing Results</h2>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>Hypothesis</th><th>Test</th><th>Result</th><th>p-value</th></tr>
+            </thead>
+            <tbody>
+                {% for h in results.hypotheses %}
+                <tr>
+                    <td><strong>{{ h.id }}</strong>: {{ h.statement }}</td>
+                    <td>{{ h.test }}</td>
+                    <td>{{ h.result }}</td>
+                    <td class="{{ 'p-significant' if h.p < 0.05 else 'p-ns' }}">
+                        {{ "< .001" if h.p < 0.001 else "%.3f"|format(h.p) }}
+                        {{ "(supported)" if h.p < 0.05 else "(not supported)" }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not results.hypotheses %}
+                <tr><td colspan="4">Not enough matching constructs were present in the uploaded file to test hypotheses.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if results.qualitative %}
+<section class="results-section">
+    <h2>Qualitative Themes (Open-Ended Responses)</h2>
+    <div class="chart-grid" id="qualitative-charts"></div>
+</section>
+{% endif %}
+
+<section class="results-section">
+    <h2>Recommendations</h2>
+    <div class="card-grid">
+        {% for rec in recommendations %}
+        <div class="info-card recommendation-card">
+            <h3>{{ rec.title }}</h3>
+            <p>{{ rec.detail }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="results-section">
+    <h2>Countermeasures — MITRE ATT&amp;CK&reg; Alignment</h2>
+    <p class="section-lead">
+        The techniques below are commonly relevant to SOC incident-response workflows.
+        Reference: <a href="{{ mitre_url }}" target="_blank" rel="noopener">{{ mitre_url }}</a>
+    </p>
+    <div class="table-wrapper">
+        <table class="data-table countermeasures-table">
+            <thead>
+                <tr><th>ID</th><th>Technique</th><th>Tactic</th><th>Why AI helps</th><th>Mitigation</th></tr>
+            </thead>
+            <tbody>
+                {% for cm in countermeasures %}
+                <tr>
+                    <td><a href="{{ cm.url }}" target="_blank" rel="noopener">{{ cm.id }}</a></td>
+                    <td>{{ cm.name }}</td>
+                    <td>{{ cm.tactic }}</td>
+                    <td>{{ cm.ai_relevance }}</td>
+                    <td>{{ cm.mitigation }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="mitre-credit-inline">
+        Powered by MITRE ATT&amp;CK&reg; | <a href="{{ mitre_url }}" target="_blank" rel="noopener">{{ mitre_url }}</a>
+    </p>
+</section>
+
+<section class="results-section">
+    <h2>Future Directions</h2>
+    <div class="card-grid">
+        {% for fd in future_directions %}
+        <div class="info-card">
+            <h3>{{ fd.title }}</h3>
+            <p>{{ fd.detail }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script id="results-data" type="application/json">{{ results | tojson }}</script>
+<script>
+    // main.js listens for this event and only builds charts on pages
+    // that include a #results-data script tag.
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderResultsCharts) { window.renderResultsCharts(); }
+    });
+</script>
+{% endblock %}

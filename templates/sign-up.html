@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-card">
+        <h2>Create an Account</h2>
+        <p class="auth-sub">Create an account to upload questionnaire data and view results.</p>
+        <form method="POST" action="{{ url_for('sign_up') }}" class="auth-form">
+            <label for="full_name">Full name</label>
+            <input type="text" id="full_name" name="full_name" required autofocus>
+
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" minlength="8" required>
+            <p class="field-hint">At least 8 characters.</p>
+
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password" name="confirm_password" minlength="8" required>
+
+            <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="{{ url_for('sign_in') }}">Sign in</a></p>
+    </div>
+</section>
+{% endblock %}
