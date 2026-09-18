@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results &amp; Discussion</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header" id="site-header"></header>
+
+    <main class="page-content container">
+        <section class="page-header">
+            <h1>Results &amp; Discussion</h1>
+            <p id="n-responses-line"></p>
+        </section>
+
+        <section class="notice-box" id="notice-box" style="display:none;">
+            <h3>Data notes</h3>
+            <ul id="notice-list"></ul>
+        </section>
+
+        <section class="results-section">
+            <h2>Respondent Profile</h2>
+            <div class="chart-grid" id="demographics-charts"></div>
+        </section>
+
+        <section class="results-section">
+            <h2>Construct Reliability &amp; Descriptive Statistics</h2>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Construct</th><th>Items</th><th>Mean</th><th>SD</th><th>Cronbach's &alpha;</th></tr>
+                    </thead>
+                    <tbody id="reliability-tbody"></tbody>
+                </table>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="construct-means-chart" height="120"></canvas>
+            </div>
+        </section>
+
+        <section class="results-section">
+            <h2>Correlation Matrix</h2>
+            <div class="table-wrapper" id="correlation-table-wrapper"></div>
+        </section>
+
+        <section class="results-section">
+            <h2>Hypothesis Testing Results</h2>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Hypothesis</th><th>Test</th><th>Result</th><th>p-value</th></tr>
+                    </thead>
+                    <tbody id="hypotheses-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="results-section" id="qualitative-section" style="display:none;">
+            <h2>Qualitative Themes (Open-Ended Responses)</h2>
+            <div class="chart-grid" id="qualitative-charts"></div>
+        </section>
+
+        <section class="results-section">
+            <h2>Recommendations</h2>
+            <div class="card-grid" id="recommendations-grid"></div>
+        </section>
+
+        <section class="results-section">
+            <h2>Countermeasures — MITRE ATT&amp;CK&reg; Alignment</h2>
+            <p class="section-lead">
+                The techniques below are commonly relevant to SOC incident-response workflows.
+                Reference: <a href="https://attack.mitre.org/" target="_blank" rel="noopener">https://attack.mitre.org/</a>
+            </p>
+            <div class="table-wrapper">
+                <table class="data-table countermeasures-table">
+                    <thead>
+                        <tr><th>ID</th><th>Technique</th><th>Tactic</th><th>Why AI helps</th><th>Mitigation</th></tr>
+                    </thead>
+                    <tbody id="countermeasures-tbody"></tbody>
+                </table>
+            </div>
+            <p class="mitre-credit-inline">
+                Powered by MITRE ATT&amp;CK&reg; | <a href="https://attack.mitre.org/" target="_blank" rel="noopener">https://attack.mitre.org/</a>
+            </p>
+        </section>
+
+        <section class="results-section">
+            <h2>Future Directions</h2>
+            <div class="card-grid" id="future-directions-grid"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer" id="site-footer"></footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <script src="../styles/main.js"></script>
+    <script src="../styles/mitre.js"></script>
+    <script src="../styles/analysis.js"></script>
+    <script>
+        renderHeaderFooter("../");
+        Auth.requireLogin("sign-In.html");
+
+        const raw = sessionStorage.getItem("soc_ai_results");
+        if (!raw) {
+            showFlash("No analysis results yet — please upload a dataset first.", "warning");
+            window.location.href = "analysis.html";
+        } else {
+            const results = JSON.parse(raw);
+            renderResults(results);
+        }
+
+        function renderResults(results) {
+            document.getElementById("n-responses-line").innerHTML =
+                `Based on <strong>${results.n_responses}</strong> uploaded responses.`;
+
+            // --- Data notes ---
+            if (results.missing_report && results.missing_report.length) {
+                document.getElementById("notice-box").style.display = "block";
+                document.getElementById("notice-list").innerHTML =
+                    results.missing_report.map(n => `<li>${n}</li>`).join("");
+            }
+
+            // --- Demographics charts ---
+            const demoGrid = document.getElementById("demographics-charts");
+            const palette = ["#0e9b8a", "#1a8fbf", "#c8791a", "#2e8b57", "#123b6b", "#c0392b", "#5b6b79"];
+            let di = 0;
+            for (const label in results.demographics) {
+                di += 1;
+                const canvasId = "demo-chart-" + di;
+                const card = document.createElement("div");
+                card.className = "chart-card";
+                card.innerHTML = `<h4>${label}</h4><canvas id="${canvasId}" height="200"></canvas>`;
+                demoGrid.appendChild(card);
+                const d = results.demographics[label];
+                new Chart(document.getElementById(canvasId), {
+                    type: "doughnut",
+                    data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: palette }] },
+                    options: { responsive: true, plugins: { legend: { position: "bottom" } } },
+                });
+            }
+
+            // --- Reliability table ---
+            const relBody = document.getElementById("reliability-tbody");
+            results.reliability.forEach(row => {
+                relBody.innerHTML += `<tr>
+                    <td>${row.construct}</td>
+                    <td>${row.items}</td>
+                    <td>${row.mean !== null ? row.mean : "—"}</td>
+                    <td>${row.sd !== null ? row.sd : "—"}</td>
+                    <td>${row.alpha !== null ? row.alpha : "—"}</td>
+                </tr>`;
+            });
+
+            // --- Construct means chart ---
+            const cmLabels = Object.keys(results.construct_means);
+            const cmValues = cmLabels.map(k => results.construct_means[k]);
+            new Chart(document.getElementById("construct-means-chart"), {
+                type: "bar",
+                data: { labels: cmLabels, datasets: [{ label: "Mean score (1-5)", data: cmValues, backgroundColor: "#0e9b8a", borderRadius: 4 }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+            });
+
+            // --- Correlation matrix ---
+            const corrWrapper = document.getElementById("correlation-table-wrapper");
+            if (results.correlation.labels && results.correlation.labels.length) {
+                const labels = results.correlation.labels;
+                const matrix = results.correlation.matrix;
+                let html = "<table class=\"data-table\"><thead><tr><th></th>";
+                labels.forEach(l => html += `<th>${l}</th>`);
+                html += "</tr></thead><tbody>";
+                matrix.forEach((row, ri) => {
+                    html += `<tr><th>${labels[ri]}</th>`;
+                    row.forEach(val => {
+                        html += `<td class="corr-cell" style="background:${correlationColor(val)}">${val.toFixed(2)}</td>`;
+                    });
+                    html += "</tr>";
+                });
+                html += "</tbody></table>";
+                corrWrapper.innerHTML = html;
+            } else {
+                corrWrapper.innerHTML = "<p style=\"padding:16px;\">Not enough constructs were available to compute a correlation matrix.</p>";
+            }
+
+            // --- Hypothesis testing table ---
+            const hypBody = document.getElementById("hypotheses-tbody");
+            if (results.hypotheses.length === 0) {
+                hypBody.innerHTML = "<tr><td colspan=\"4\">Not enough matching constructs were present in the uploaded file to test hypotheses.</td></tr>";
+            } else {
+                results.hypotheses.forEach(h => {
+                    const sig = h.p < 0.05;
+                    const pText = (h.p < 0.001 ? "&lt; .001" : h.p.toFixed(3)) + (sig ? " (supported)" : " (not supported)");
+                    hypBody.innerHTML += `<tr>
+                        <td><strong>${h.id}</strong>: ${h.statement}</td>
+                        <td>${h.test}</td>
+                        <td>${h.result}</td>
+                        <td class="${sig ? 'p-significant' : 'p-ns'}">${pText}</td>
+                    </tr>`;
+                });
+            }
+
+            // --- Qualitative themes ---
+            const qualKeys = Object.keys(results.qualitative || {});
+            if (qualKeys.length) {
+                document.getElementById("qualitative-section").style.display = "block";
+                const qualGrid = document.getElementById("qualitative-charts");
+                let qi = 0;
+                qualKeys.forEach(qLabel => {
+                    qi += 1;
+                    const canvasId = "qual-chart-" + qi;
+                    const card = document.createElement("div");
+                    card.className = "chart-card";
+                    card.innerHTML = `<h4>${qLabel}</h4><canvas id="${canvasId}" height="200"></canvas>`;
+                    qualGrid.appendChild(card);
+                    const counts = results.qualitative[qLabel];
+                    const kLabels = Object.keys(counts);
+                    const kValues = kLabels.map(k => counts[k]);
+                    new Chart(document.getElementById(canvasId), {
+                        type: "bar",
+                        data: { labels: kLabels, datasets: [{ label: "Mentions", data: kValues, backgroundColor: "#1a8fbf", borderRadius: 4 }] },
+                        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+                    });
+                });
+            }
+
+            // --- Recommendations ---
+            const recs = generateRecommendations(results.construct_means);
+            document.getElementById("recommendations-grid").innerHTML = recs.map(r => `
+                <div class="info-card recommendation-card">
+                    <h3>${r.title}</h3>
+                    <p>${r.detail}</p>
+                </div>`).join("");
+
+            // --- Countermeasures ---
+            const cmTbody = document.getElementById("countermeasures-tbody");
+            getCountermeasures().forEach(cm => {
+                cmTbody.innerHTML += `<tr>
+                    <td><a href="${cm.url}" target="_blank" rel="noopener">${cm.id}</a></td>
+                    <td>${cm.name}</td>
+                    <td>${cm.tactic}</td>
+                    <td>${cm.aiRelevance}</td>
+                    <td>${cm.mitigation}</td>
+                </tr>`;
+            });
+
+            // --- Future directions ---
+            document.getElementById("future-directions-grid").innerHTML = getFutureDirections().map(fd => `
+                <div class="info-card">
+                    <h3>${fd.title}</h3>
+                    <p>${fd.detail}</p>
+                </div>`).join("");
+        }
+
+        function correlationColor(value) {
+            const v = Math.max(-1, Math.min(1, value));
+            if (v >= 0) return `rgba(14, 155, 138, ${0.12 + 0.55 * v})`;
+            const a = Math.abs(v);
+            return `rgba(192, 57, 43, ${0.12 + 0.55 * a})`;
+        }
+    </script>
+</body>
+</html>

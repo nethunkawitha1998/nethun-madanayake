@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analysis</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header" id="site-header"></header>
+
+    <main class="page-content container">
+        <section class="page-header">
+            <h1>Data Collection &amp; Analysis</h1>
+            <p>Upload the exported questionnaire responses (CSV) to generate the full statistical
+            analysis: construct reliability, correlations, hypothesis testing, and tailored
+            MITRE ATT&amp;CK-aligned recommendations. The file is parsed entirely in your browser
+            and is never uploaded anywhere.</p>
+        </section>
+
+        <section class="upload-section">
+            <div class="upload-card">
+                <form id="upload-form">
+                    <label for="csv_file" class="file-drop" id="file-drop-label">
+                        <span id="file-drop-text">Click to choose a CSV file, or drag it here</span>
+                        <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-block" id="run-btn">Run Analysis</button>
+                </form>
+            </div>
+
+            <div class="info-card upload-help">
+                <h3>Expected column format</h3>
+                <p>
+                    The CSV must use the short survey codes defined in
+                    <a href="../data_dictionary.csv" download><code>data_dictionary.csv</code></a>
+                    (download it here), for example:
+                </p>
+                <ul class="code-list">
+                    <li><code>A5_JobRole</code>, <code>A6_YearsInCybersecurity</code>, <code>A8_IndustrySector</code>, <code>A9_OrganizationSize</code></li>
+                    <li><code>B1</code>…<code>B10</code> — AI Tool Adoption</li>
+                    <li><code>C1</code>…<code>C10</code> — AI Adoption Maturity</li>
+                    <li><code>D1_1</code>…<code>D1_5</code> — Mean Time to Detect</li>
+                    <li><code>D2_1</code>…<code>D2_5</code> — Mean Time to Respond</li>
+                    <li><code>E1</code>…<code>E10</code> — Alert Triage Accuracy</li>
+                    <li><code>F1</code>…<code>F10</code> — Analyst Productivity</li>
+                    <li><code>G1_1</code>…<code>G1_8</code> — Trust in AI</li>
+                    <li><code>G2_1</code>…<code>G2_8</code> — Explainability</li>
+                    <li><code>H1</code>…<code>H10</code> — Organisational Factors</li>
+                </ul>
+                <p class="field-hint">
+                    A raw Google Forms export uses full question text as column headers — rename
+                    these to the codes above before uploading. Missing scales are skipped
+                    automatically rather than causing an error.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer" id="site-footer"></footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="../styles/main.js"></script>
+    <script src="../styles/analysis.js"></script>
+    <script>
+        renderHeaderFooter("../");
+        Auth.requireLogin("sign-In.html");
+
+        document.getElementById("csv_file").addEventListener("change", function (e) {
+            const label = document.getElementById("file-drop-text");
+            if (e.target.files.length > 0) {
+                label.textContent = e.target.files[0].name;
+            }
+        });
+
+        document.getElementById("upload-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const file = document.getElementById("csv_file").files[0];
+            const btn = document.getElementById("run-btn");
+            btn.disabled = true;
+            btn.textContent = "Analysing…";
+
+            analyzeCsvFile(file)
+                .then(function (results) {
+                    sessionStorage.setItem("soc_ai_results", JSON.stringify(results));
+                    window.location.href = "results.html";
+                })
+                .catch(function (err) {
+                    showFlash(err.message || "Something went wrong while analysing the file.", "danger");
+                    btn.disabled = false;
+                    btn.textContent = "Run Analysis";
+                });
+        });
+    </script>
+</body>
+</html>

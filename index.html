@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI in SOC Incident Response — Home</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header" id="site-header"></header>
+
+    <main class="page-content container">
+        <section class="hero">
+            <h1>The Impact of AI-Based Solutions on<br>Incident Response Efficiency in SOC Environments</h1>
+            <p class="hero-sub">
+                A quantitative research project measuring how AI adoption maturity, analyst trust,
+                and explainability relate to detection speed, response speed, triage accuracy, and
+                analyst productivity in Security Operations Centres.
+            </p>
+            <div class="hero-actions">
+                <a href="#questionnaire" class="btn btn-primary btn-lg">Take the SOC Expert Questionnaire</a>
+                <a href="templates/analysis.html" class="btn btn-outline btn-lg">Upload &amp; Analyse Data</a>
+            </div>
+        </section>
+
+        <section class="card-grid">
+            <div class="info-card">
+                <h3>1. Respond</h3>
+                <p>SOC analysts, engineers and managers complete the anonymised Google Form
+                questionnaire, covering AI adoption, trust, explainability, and incident-response
+                efficiency outcomes.</p>
+            </div>
+            <div class="info-card">
+                <h3>2. Upload</h3>
+                <p>Export the response sheet as CSV and upload it on the Analysis page. Everything
+                runs in your browser — no file is ever uploaded to a server.</p>
+            </div>
+            <div class="info-card">
+                <h3>3. Review</h3>
+                <p>Instantly view reliability statistics, hypothesis testing results, and
+                MITRE ATT&amp;CK-aligned recommendations tailored to what the data shows.</p>
+            </div>
+        </section>
+
+        <section class="questionnaire-embed" id="questionnaire">
+            <h2>Questionnaire</h2>
+            <p>
+                Complete the anonymised SOC expert questionnaire below, or
+                <a id="google-form-link" href="#" target="_blank" rel="noopener">open it in a new tab</a>.
+            </p>
+            <div class="iframe-wrapper">
+                <iframe id="google-form-iframe" src="" width="100%" height="900" frameborder="0"
+                        marginheight="0" marginwidth="0">Loading questionnaire…</iframe>
+            </div>
+        </section>
+
+        <section class="researcher-profile">
+            <h2>About the Researcher</h2>
+            <div class="profile-card" id="profile-card"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer" id="site-footer"></footer>
+
+    <script src="styles/main.js"></script>
+    <script>
+        renderHeaderFooter("");
+
+        document.getElementById("google-form-link").href = SITE_CONFIG.googleFormUrl;
+        document.getElementById("google-form-iframe").src = SITE_CONFIG.googleFormUrl;
+
+        const r = SITE_CONFIG.researcher;
+        document.getElementById("profile-card").innerHTML = `
+            <img src="images/${r.photo}" alt="Photo of ${r.name}" class="profile-photo"
+                 onerror="this.src='images/placeholder.png'">
+            <div class="profile-details">
+                <h3>${r.name}</h3>
+                <p class="profile-role">${r.role} at ${r.affiliation}</p>
+                <ul class="profile-qualifications">
+                    ${r.qualifications.map(q => `<li>${q}</li>`).join("")}
+                </ul>
+                <ul class="profile-contact">
+                    <li>LinkedIn: <a href="${r.linkedin}" target="_blank" rel="noopener">${r.linkedin}</a></li>
+                    <li>Email: <a href="mailto:${r.email}">${r.email}</a></li>
+                    <li>Contact: ${r.contact}</li>
+                </ul>
+            </div>`;
+    </script>
+</body>
+</html>
